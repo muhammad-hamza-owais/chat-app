@@ -123,6 +123,9 @@ button.muted {
     align-items: stretch;
   }
   button {
-    width: 10%;
+    width: 100%;
+  }
+  #submit-button {
+  width: 10%;
   }
 }
