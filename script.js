@@ -1,4 +1,3 @@
-// script.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 import {
   getAuth,
@@ -8,7 +7,6 @@ import {
   sendEmailVerification,
   signOut,
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-
 import {
   getDatabase,
   ref,
@@ -115,8 +113,7 @@ resendBtn.addEventListener("click", async () => {
       await sendEmailVerification(user);
       authMsg.textContent = "Verification email resent. Check spam folder.";
     } else {
-      authMsg.textContent =
-        "Login first (this will work if you sign in first and then sign out before signup).";
+      authMsg.textContent = "Login first to resend verification.";
     }
   } catch (err) {
     authMsg.textContent = "Resend error: " + err.message;
@@ -131,22 +128,26 @@ logoutBtn.addEventListener("click", async () => {
 
 onAuthStateChanged(auth, async (user) => {
   if (user && user.emailVerified) {
-    myUser = { uid: user.uid, email: user.email };
+    const emailLower = user.email.toLowerCase();
+    myUser = { uid: user.uid, email: emailLower };
     authPanel.classList.add("hidden");
     appDiv.classList.remove("hidden");
     meEmail.textContent = user.email;
-
-    const userRef = ref(db, "users/" + user.uid);
-    await set(userRef, {
-      email: user.email,
-      online: true,
-      lastSeen: serverTimestamp(),
-    });
-    onDisconnect(ref(db, "users/" + user.uid + "/online")).set(false);
-    onDisconnect(ref(db, "users/" + user.uid + "/lastSeen")).set(
-      serverTimestamp(),
-    );
-    await set(ref(db, "users/" + user.uid + "/online"), true);
+    const userBaseRef = ref(db, "users/" + user.uid);
+    const onlineRef = ref(db, "users/" + user.uid + "/online");
+    const lastSeenRef = ref(db, "users/" + user.uid + "/lastSeen");
+    try {
+      onDisconnect(onlineRef).set(false);
+      onDisconnect(lastSeenRef).set(serverTimestamp());
+      await set(userBaseRef, {
+        email: emailLower,
+        online: true,
+        lastSeen: serverTimestamp(),
+      });
+      await set(onlineRef, true);
+    } catch (err) {
+      console.error("Presence error:", err);
+    }
   } else {
     myUser = null;
     authPanel.classList.remove("hidden");
@@ -168,10 +169,9 @@ searchBtn.addEventListener("click", async () => {
     return;
   }
   if (target === myUser.email.toLowerCase()) {
-    searchMsg.textContent = "you can't talk with your self";
+    searchMsg.textContent = "you can't talk with yourself";
     return;
   }
-
   const q = query(ref(db, "users"), orderByChild("email"), equalTo(target));
   try {
     const snap = await get(q);
@@ -190,20 +190,21 @@ searchBtn.addEventListener("click", async () => {
     const keys = Object.keys(users);
     const otherUid = keys[0];
     const otherData = users[otherUid];
-
-    if (otherData.online) {
-      startOrOpenRoom(otherUid, otherData.email);
+    const otherEmailStored = (otherData.email || "").toLowerCase();
+    const isOnline = !!otherData.online;
+    if (isOnline) {
+      startOrOpenRoom(otherUid, otherEmailStored);
     } else {
       searchMsg.innerHTML = `User offline. <button id="invite-btn2">Invite</button> <button id="start-room">Start anyway</button>`;
       document.getElementById("invite-btn2").addEventListener("click", () => {
         const subject = encodeURIComponent("Join my chat app");
         const body = encodeURIComponent(
-          `I invited you to chat. Please sign up and provide your email address to chat. App link: <https://chat-app-three-sooty-37.vercel.app/>`,
+          `I invited you to chat. Please sign up and verify your email to chat. App link: <https://chat-app-three-sooty-37.vercel.app/>`,
         );
         window.location.href = `mailto:${target}?subject=${subject}&body=${body}`;
       });
       document.getElementById("start-room").addEventListener("click", () => {
-        startOrOpenRoom(otherUid, otherData.email);
+        startOrOpenRoom(otherUid, otherEmailStored);
       });
     }
   } catch (err) {
@@ -218,16 +219,12 @@ function startOrOpenRoom(otherUid, otherEmail) {
   const u2 = otherUid;
   const roomId = [u1, u2].sort().join("_");
   currentRoomId = roomId;
-
   chatWith.textContent = "Chat with: " + otherEmail;
   roomMessages.innerHTML = "";
   chatArea.classList.remove("hidden");
-
   const messagesRef = ref(db, "rooms/" + roomId + "/messages");
-
   if (childListeners[roomId]) return;
   childListeners[roomId] = true;
-
   onChildAdded(messagesRef, (snap) => {
     const data = snap.val();
     const el = document.createElement("div");
