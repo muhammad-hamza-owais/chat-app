@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Realtime Chat - Email Auth</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="auth-panel" class="card">
+      <h2>Login / Sign up</h2>
+      <input id="email" type="email" placeholder="Email" />
+      <input id="password" type="password" placeholder="Password" />
+      <div class="row">
+        <button id="signup-btn">Sign up</button>
+        <button id="login-btn">Log in</button>
+        <button id="resend-btn" class="muted">Resend verification</button>
+      </div>
+      <p id="auth-msg" class="muted"></p>
+    </div>
+
+    <div id="app" class="hidden">
+      <div class="header">
+        <div>You: <span id="me-email"></span></div>
+        <div>
+          <button id="logout-btn" class="danger">Logout</button>
+        </div>
+      </div>
+
+      <div class="card search-area">
+        <input id="search-email" placeholder="search email" />
+        <div class="row">
+          <button id="search-btn">Search</button>
+          <p id="search-msg" class="muted"></p>
+        </div>
+      </div>
+
+      <div id="chat-area" class="card hidden">
+        <h3 id="chat-with"></h3>
+        <div id="room-messages" class="messages"></div>
+        <form id="room-form" class="room-form">
+          <input id="room-input" placeholder="Message" autocomplete="off" />
+          <button type="submit">Send</button>
+        </form>
+      </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+  </body>
+</html>
