@@ -176,7 +176,7 @@ searchBtn.addEventListener("click", async () => {
   try {
     const snap = await get(q);
     if (!snap.exists()) {
-      searchMsg.innerHTML = `User nahi mila. <button id="invite-btn">Invite via email</button>`;
+      searchMsg.innerHTML = `User not found. <button id="invite-btn">Invite via email</button>`;
       document.getElementById("invite-btn").addEventListener("click", () => {
         const subject = encodeURIComponent("Join my chat app");
         const body = encodeURIComponent(
